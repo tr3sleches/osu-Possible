@@ -1,0 +1,46 @@
+//acc via MLE without sliders
+
+//establish other windows
+double goodwindow = 139.5 - 8 * Attributes.OverallDifficulty;
+double mehwindow = 199.5 - 10 * Attributes.OverallDifficulty;
+
+//adjust for more objects than circles
+if(countMiss < countHitCircles)
+{
+  double pmiss = countMiss/countHitCircles;
+  if(countMiss + countMeh < countHitCircles)
+  {
+    double p50 = countMeh/countHitCircles;
+    if(countMiss + countMeh + countGood < countHitCircles)
+    {
+      double p100 = countGood/countHitCircles;
+      p300 = 1 - p100 - p50 - pmiss;
+    }
+    else
+    {
+      p100 = 1 - p50 -pmiss;
+    }
+  }
+  else
+  {
+    p50 = 1 - pmiss;
+  }
+}
+else
+{
+  pmiss = 1;
+}
+
+//worst case scenario of acc results
+zDivn = Math.pow(1.6445,2) / countHitCircles;
+p300 = (p300 + zDivn - Math.sqrt(2*p300* zDivn*(1-p300) + Math.pow(zDivn,2))) / (1 + 2* zDivn);
+p100 = (p100 + zDivn + Math.sqrt(2*p100* zDivn*(1-p100) + Math.pow(zDivn,2))) / (1 + 2* zDivn);
+p50 = (p50 + zDivn + Math.sqrt(2*p50* zDivn*(1-p50) + Math.pow(zDivn,2))) / (1 + 2* zDivn);
+
+//likelihood function and root
+double accLogLikelihood(double sigma) => p300*Math.log(SpecialFunctions.Erf(greatwindow/(sigma*Math.sqrt(2)))) + p100* Math.log(SpecialFunctions.Erf(goodwindow/(sigma*Math.sqrt(2))) - SpecialFunctions.Erf(greatwindow/(sigma*Math.sqrt(2)))) + p50* Math.log(SpecialFunctions.Erf(mehwindow/(sigma*Math.sqrt(2))) - SpecialFunctions.Erf(goodwindow/(sigma*Math.sqrt(2)))) + pmiss* Math.log(1 - SpecialFunctions.Erf(mehwindow/(sigma*Math.sqrt(2))));
+double sDev = Brent.FindRoot(accLogLikelihood, 2, 300, 1e-4);
+
+//delta-t has this in here for some reason so I’ll just have it too
+double accMLE = SpecialFunctions.erf(greatwindow/(sDev*sqrt(2)));
+double deviationOnCircles = (greatWindow + 20)/(Math.sqrt(2)*SpecialFunctions.ErfInv(accMLE));
